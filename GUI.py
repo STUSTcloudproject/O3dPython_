@@ -49,15 +49,15 @@ class App(tk.Tk):
         # 添加可摺疊面板並設置其內容
         self.depth_stream = CollapsiblePane(self.left_panel, title="Depth Stream ", toggle_callback=toggle_callback)
         self.depth_stream.pack(fill="x", expand=0, padx=4, pady=4)  # 摺疊時不佔用額外空間
-        self._add_stream_setting(self.depth_stream.sub_frame, ["320 x 240", "640 x 480", "1024 x 768"])
+        self._add_stream_setting(self.depth_stream.sub_frame, ["320 x 240"])
 
         self.infrared_stream = CollapsiblePane(self.left_panel, title="Infrared Stream ", toggle_callback=toggle_callback)
         self.infrared_stream.pack(fill="x", expand=0, padx=4, pady=4)
-        self._add_stream_setting(self.infrared_stream.sub_frame, ["320 x 240", "640 x 480", "1024 x 768"])
+        self._add_stream_setting(self.infrared_stream.sub_frame, ["320 x 240"])
 
         self.color_stream = CollapsiblePane(self.left_panel, title="Color Stream ", toggle_callback=toggle_callback)
         self.color_stream.pack(fill="x", expand=0, padx=4, pady=4)
-        self._add_stream_setting(self.color_stream.sub_frame, ["640 x 360", "640 x 480", "960 x 540", "1280 x 720", "1920 x 1080"])
+        self._add_stream_setting(self.color_stream.sub_frame, ["640 x 360", "640 x 480"])
 
     def _setup_right_panel(self):
         # 確保 right_panel 能夠根據內容自動調整大小
