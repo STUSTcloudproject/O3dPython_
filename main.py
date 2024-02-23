@@ -3,6 +3,7 @@ from PIL import Image, ImageTk
 import threading
 from tkinter import messagebox
 from RealSense import RealSense
+from ImageProcessor import ImageProcessor
 
 class MainApp:
     def __init__(self):
@@ -19,6 +20,8 @@ class MainApp:
         self.create_image_placeholders()
 
         self.rs_device = RealSense()
+
+        self.image_processor = ImageProcessor()
 
         # 启动后台线程来监视settings并更新GUI
         self.update_thread = threading.Thread(target=self.monitor_settings_and_update_gui, daemon=True)
@@ -42,10 +45,23 @@ class MainApp:
                     self.settings[stream_type]["resolution"] = combo_value
                 else:
                     print(f"Unrecognized stream type: {stream_type}")
+            self.stop_real_sense()
+            self.restart_real_sense(self.settings)
             print(self.settings)
         except Exception as e:
             print(f"An error occurred: {e}")
 
+    def restart_real_sense(self, settings):
+        if not self.rs_device.is_pipeline_started:
+            self.update_real_sense(settings)
+
+    def stop_real_sense(self):
+        if self.rs_device.is_pipeline_started:
+            self.rs_device.stop_pipeline()
+    
+    def update_real_sense(self, settings):
+        self.rs_device.toggle_config(settings)
+        self.rs_device.restart_pipeline()
 
     def monitor_settings_and_update_gui(self):
         while True:
@@ -61,11 +77,17 @@ class MainApp:
         for stream_type, config in settings.items():
             if config["enabled"]:
                 if stream_type == "depth":
-                    self.app.set_depth_image(self.red_image)
+                    depth_image = self.rs_device.get_depth_image()
+                    self.depth_image_ref = self.image_processor.process_and_resize_depth_image(depth_image)
+                    self.app.set_depth_image(self.depth_image_ref)
                 elif stream_type == "infrared":
-                    self.app.set_infrared_image(self.red_image)
+                    infrared_image = self.rs_device.get_infrared_image()
+                    self.infrared_image_ref = self.image_processor.process_and_resize_infrared_image(infrared_image)
+                    self.app.set_infrared_image(self.infrared_image_ref)
                 elif stream_type == "color":
-                    self.app.set_color_image(self.red_image)
+                    color_image = self.rs_device.get_color_image()
+                    self.color_image_ref = self.image_processor.process_and_resize_color_image(color_image)          
+                    self.app.set_color_image(self.color_image_ref)
             else:
                 if stream_type == "depth":
                     self.app.set_depth_image(self.black_image)
@@ -75,6 +97,7 @@ class MainApp:
                     self.app.set_color_image(self.black_image)
 
     def close_program(self):
+        self.rs_device.__exit__(None, None, None)
         self.app.destroy()
 
     def run(self):
