@@ -2,6 +2,7 @@ import GUI
 from PIL import Image, ImageTk
 import threading
 from tkinter import messagebox
+from RealSense import RealSense
 
 class MainApp:
     def __init__(self):
@@ -16,6 +17,8 @@ class MainApp:
 
         # 创建图像占位符
         self.create_image_placeholders()
+
+        self.rs_device = RealSense()
 
         # 启动后台线程来监视settings并更新GUI
         self.update_thread = threading.Thread(target=self.monitor_settings_and_update_gui, daemon=True)
