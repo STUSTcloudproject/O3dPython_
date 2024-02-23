@@ -1,38 +1,9 @@
 import tkinter as tk
 from tkinter import ttk
-from PIL import Image, ImageTk
-import numpy as np
 import cv2
 import threading
 from RealSense import RealSense  # 确保这里正确地导入了您的RealSense类
-
-def process_color_image(color_image):
-    # 处理彩色图像以供显示
-    if color_image is None:
-        return None
-    color_colormap = cv2.cvtColor(color_image, cv2.COLOR_BGR2RGB)
-    color_colormap = Image.fromarray(color_colormap)
-    color_colormap = ImageTk.PhotoImage(image=color_colormap)
-    return color_colormap
-
-def process_depth_image(depth_image):
-    # 处理深度图像以供显示
-    if depth_image is None:
-        return None
-    depth_colormap = cv2.applyColorMap(cv2.convertScaleAbs(depth_image, alpha=0.03), cv2.COLORMAP_JET)
-    depth_colormap = cv2.cvtColor(depth_colormap, cv2.COLOR_BGR2RGB)
-    depth_colormap = Image.fromarray(depth_colormap)
-    depth_colormap = ImageTk.PhotoImage(image=depth_colormap)
-    return depth_colormap
-
-def process_infrared_image(infrared_image):
-    # 处理红外图像以供显示
-    if infrared_image is None:
-        return None
-    infrared_colormap = cv2.cvtColor(infrared_image, cv2.COLOR_GRAY2RGB)
-    infrared_colormap = Image.fromarray(infrared_colormap)
-    infrared_colormap = ImageTk.PhotoImage(image=infrared_colormap)
-    return infrared_colormap
+from ImageProcessor import ImageProcessor  # 导入ImageProcessor类
 
 class RealSenseApp:
     def __init__(self, root):
@@ -47,6 +18,12 @@ class RealSenseApp:
 
         self.infrared_label = ttk.Label(self.root)
         self.infrared_label.pack()
+
+        self.color_image_ref = None
+        self.depth_image_ref = None
+        self.infrared_image_ref = None
+        
+        self.image_processor = ImageProcessor()  # 实例化ImageProcessor
         
         # 添加重启和停止按钮
         self.restart_button = ttk.Button(self.root, text="Restart", command=self.restart_real_sense)
@@ -66,16 +43,13 @@ class RealSenseApp:
         self.update_images()
 
     def restart_real_sense(self):
-        # 检查RealSense设备是否已经启动，如果未启动，则启动它
         if not self.rs_device.is_pipeline_started:
             self.update_real_sense()
 
     def stop_real_sense(self):
-        # 停止RealSense设备
         self.rs_device.stop_pipeline()
     
     def update_real_sense(self):
-        # 配置并启动RealSense设备
         settings = {
             'depth': {'enabled': True, 'resolution': '320 x 240'},
             'infrared': {'enabled': True, 'resolution': '320 x 240'},   
@@ -85,20 +59,26 @@ class RealSenseApp:
         self.rs_device.restart_pipeline()
 
     def update_images(self):
-        # 更新Tkinter界面上的图像
+        # 处理并更新彩色图像
         if self.rs_device.color_image is not None:
-            self.color_label.image = process_color_image(self.rs_device.color_image)
-            self.color_label.config(image=self.color_label.image)
+            color_image = self.rs_device.get_color_image()
+            self.color_image_ref = self.image_processor.process_and_resize_color_image(color_image)
+            self.color_label.config(image=self.color_image_ref)
         
+        # 处理并更新深度图像
         if self.rs_device.depth_image is not None:
-            self.depth_label.image = process_depth_image(self.rs_device.depth_image)
-            self.depth_label.config(image=self.depth_label.image)
+            depth_image = self.rs_device.get_depth_image()
+            self.depth_image_ref = self.image_processor.process_and_resize_depth_image(depth_image)
+            self.depth_label.config(image=self.depth_image_ref)
         
+        # 处理并更新红外图像
         if self.rs_device.infrared_image is not None:
-            self.infrared_label.image = process_infrared_image(self.rs_device.infrared_image)
-            self.infrared_label.config(image=self.infrared_label.image)
+            infrared_image = self.rs_device.get_infrared_image()
+            self.infrared_image_ref = self.image_processor.process_and_resize_infrared_image(infrared_image)
+            self.infrared_label.config(image=self.infrared_image_ref)
         
-        self.root.after(100, self.update_images)  # 每100毫秒更新一次图像
+        # 设置定时器，以定期更新图像
+        self.root.after(100, self.update_images)
 
 if __name__ == "__main__":
     root = tk.Tk()
