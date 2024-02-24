@@ -4,6 +4,7 @@ import threading
 from tkinter import messagebox
 from RealSense import RealSense
 from ImageProcessor import ImageProcessor
+from SizeCalculator import SizeCalculator
 
 class MainApp:
     def __init__(self):
@@ -73,28 +74,36 @@ class MainApp:
             threading.Event().wait(0.1)  # 检查频率调整为每秒一次
 
     def update_gui_based_on_settings(self, settings):
-        # 根据settings的状态更新GUI
+        window_width, window_height = self.app.get_window_size()
+        left_panel_width, right_panel_width = self.app.get_panel_widths()
+
+        # 使用SizeCalculator计算目标尺寸
+        target_width, target_height = SizeCalculator.calculate_target_size(window_height, right_panel_width)
+
         for stream_type, config in settings.items():
+            target_image = self.black_image  # 默认为黑色图像
             if config["enabled"]:
+                # 根据流类型获取相应的图像并处理
                 if stream_type == "depth":
                     depth_image = self.rs_device.get_depth_image()
-                    self.depth_image_ref = self.image_processor.process_and_resize_depth_image(depth_image)
-                    self.app.set_depth_image(self.depth_image_ref)
+                    if depth_image is not None:
+                        target_image = self.image_processor.process_and_resize_depth_image(depth_image, target_width, target_height)
                 elif stream_type == "infrared":
                     infrared_image = self.rs_device.get_infrared_image()
-                    self.infrared_image_ref = self.image_processor.process_and_resize_infrared_image(infrared_image)
-                    self.app.set_infrared_image(self.infrared_image_ref)
+                    if infrared_image is not None:
+                        target_image = self.image_processor.process_and_resize_infrared_image(infrared_image, target_width, target_height)
                 elif stream_type == "color":
                     color_image = self.rs_device.get_color_image()
-                    self.color_image_ref = self.image_processor.process_and_resize_color_image(color_image)          
-                    self.app.set_color_image(self.color_image_ref)
-            else:
-                if stream_type == "depth":
-                    self.app.set_depth_image(self.black_image)
-                elif stream_type == "infrared":
-                    self.app.set_infrared_image(self.black_image)
-                elif stream_type == "color":
-                    self.app.set_color_image(self.black_image)
+                    if color_image is not None:
+                        target_image = self.image_processor.process_and_resize_color_image(color_image, target_width, target_height)
+
+            # 更新GUI中相应的图像显示
+            if stream_type == "depth":
+                self.app.set_depth_image(target_image)
+            elif stream_type == "infrared":
+                self.app.set_infrared_image(target_image)
+            elif stream_type == "color":
+                self.app.set_color_image(target_image)
 
     def close_program(self):
         self.rs_device.__exit__(None, None, None)

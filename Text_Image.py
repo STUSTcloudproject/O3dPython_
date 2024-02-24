@@ -47,7 +47,8 @@ class RealSenseApp:
             self.update_real_sense()
 
     def stop_real_sense(self):
-        self.rs_device.stop_pipeline()
+        if self.rs_device.is_pipeline_started:
+            self.rs_device.stop_pipeline()
     
     def update_real_sense(self):
         settings = {
