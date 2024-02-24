@@ -1,14 +1,14 @@
 import GUI
 from PIL import Image, ImageTk
 import threading
-from tkinter import messagebox
+import tkinter
 from RealSense import RealSense
 from ImageProcessor import ImageProcessor
 from SizeCalculator import SizeCalculator
 
 class MainApp:
     def __init__(self):
-        self.settings_lock = threading.Lock()  # 用于同步访问settings的锁
+        self.settings_lock = threading.Lock()
         self.settings = {
             "depth": {"enabled": False, "resolution": "320 x 240"},
             "infrared": {"enabled": False, "resolution": "640 x 360"},
@@ -16,17 +16,22 @@ class MainApp:
         }
         self.app = GUI.App(toggle_callback=self.toggle_switch_changed)
         self.app.protocol("WM_DELETE_WINDOW", self.close_program)
-
-        # 创建图像占位符
         self.create_image_placeholders()
-
-        self.rs_device = RealSense()
-
         self.image_processor = ImageProcessor()
+        # RealSense实例将在__enter__方法中创建
+        self.rs_device = None
 
+    def __enter__(self):
+        self.rs_device = RealSense().__enter__()  # 创建并初始化RealSense实例
         # 启动后台线程来监视settings并更新GUI
         self.update_thread = threading.Thread(target=self.monitor_settings_and_update_gui, daemon=True)
         self.update_thread.start()
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        # 清理RealSense资源
+        if self.rs_device:
+            self.rs_device.__exit__(exc_type, exc_val, exc_tb)
 
     def create_image_placeholders(self):
         # 创建红色和黑色图像作为占位符
@@ -106,12 +111,18 @@ class MainApp:
                 self.app.set_color_image(target_image)
 
     def close_program(self):
-        self.rs_device.__exit__(None, None, None)
-        self.app.destroy()
+        # 先停止RealSense设备
+        if self.rs_device:
+            self.rs_device.stop_pipeline()
+        # 然后销毁GUI应用
+        try:
+            self.app.destroy()
+        except Exception as e:
+            print(f"Error while destroying the app: {e}")
 
     def run(self):
         self.app.mainloop()
 
 if __name__ == '__main__':
-    main_app = MainApp()
-    main_app.run()
+    with MainApp() as main_app:
+        main_app.run()
