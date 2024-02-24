@@ -31,7 +31,7 @@ class App(tk.Tk):
         self._setup_left_panel(toggle_callback)
         self._setup_right_panel()
 
-        self.bind("<Configure>", self.on_window_resize)
+        self.bind("<Configure>", self._on_window_resize)
     
     def get_window_size(self):
         with self.size_lock:
@@ -41,7 +41,7 @@ class App(tk.Tk):
         with self.size_lock:
             return self.left_panel_width, self.right_panel_width
 
-    def on_window_resize(self, _):
+    def _on_window_resize(self, _):
         with self.size_lock:
             # 直接从窗口获取当前的尺寸，而不是依赖于event对象
             self.window_width = self.winfo_width()
@@ -51,10 +51,10 @@ class App(tk.Tk):
             self.right_panel_width = self.right_panel.winfo_width()
         
         # 使用after延迟调用更新布局的方法，确保在主线程中进行
-        #self.after(100, self.update_layout_based_on_size)
+        #self.after(100, self._update_layout_based_on_size)
 
 
-    def update_layout_based_on_size(self):
+    def _update_layout_based_on_size(self):
         window_width, window_height = self.get_window_size()
         left_panel_width, right_panel_width = self.get_panel_widths()
         

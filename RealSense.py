@@ -26,7 +26,7 @@ class RealSense:
         self.lock = threading.Lock()
 
 
-    def stop_thread(self):
+    def _stop_thread(self):
         if self.thread is not None and self.thread.is_alive():
             self.stop_event.set()  # 设置停止事件
             self.thread.join()  # 等待线程终止
@@ -48,7 +48,7 @@ class RealSense:
             setattr(self, resolution_key, stream_settings['resolution'])
 
 
-    def config_streams(self):
+    def _config_streams(self):
         self.config = rs.config()
         for stream_type in ['color', 'depth', 'infrared']:
             enabled_key = f'is_{stream_type}_enabled'
@@ -64,14 +64,14 @@ class RealSense:
                     self.config.enable_stream(rs.stream.infrared, 0, int(parts[0]), int(parts[1]), rs.format.y8, 30)
 
     def restart_pipeline(self):
-        self.stop_thread()  # 停止当前的处理线程
+        self._stop_thread()  # 停止当前的处理线程
         try:
             self.stop_pipeline()  # 停止当前的pipeline
-            self.config_streams()  # 根据最新的配置设置pipeline
+            self._config_streams()  # 根据最新的配置设置pipeline
             self.pipeline.start(self.config)  # 重新启动pipeline
             print("Pipeline started successfully")
             self.is_pipeline_started = True
-            self.start_thread()  # 启动新的处理线程
+            self._start_thread()  # 启动新的处理线程
         except Exception as e:
             self.is_pipeline_started = False
             print(f"An error occurred when restarting the pipeline: {e}")
@@ -97,13 +97,13 @@ class RealSense:
             print(f"An error occurred when stopping the pipeline: {e}")
             raise e
 
-    def start_thread(self):
+    def _start_thread(self):
         if self.thread is None or not self.thread.is_alive():
             self.stop_event.clear()  # 清除停止事件的状态，以便新线程可以正常运行
-            self.thread = threading.Thread(target=self.run_thread)
+            self.thread = threading.Thread(target=self._run_thread)
             self.thread.start()
 
-    def run_thread(self):
+    def _run_thread(self):
         while not self.stop_event.is_set():
             if self.is_pipeline_started and not self.stop_event.is_set():
                 try:
@@ -152,7 +152,7 @@ class RealSense:
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        self.stop_thread()
+        self._stop_thread()
         if self.is_pipeline_started:
             self.stop_pipeline()
 
