@@ -31,7 +31,8 @@ class RealSense:
             self.stop_event.set()  # 设置停止事件
             self.thread.join()  # 等待线程终止
     
-    def toggle_config(self, settings):
+    def toggle_config(self, settings): #w
+        # self._stop_thread()
         valid_stream_types = ['color', 'depth', 'infrared']
         for stream_type in settings:
             if stream_type not in valid_stream_types:
@@ -79,13 +80,15 @@ class RealSense:
 
 
         
-    def stop_pipeline(self):
+    def stop_pipeline(self): #w
         # 首先设置停止事件，通知运行中的线程停止其操作
         self.stop_event.set()
         
         # 然后等待线程安全地结束
         if self.thread is not None and self.thread.is_alive():
             self.thread.join()
+
+        # self._stop_thread()
         
         # 最后，停止pipeline
         try:
