@@ -35,9 +35,7 @@ class MainApp:
 
     def create_image_placeholders(self):
         # 创建红色和黑色图像作为占位符
-        red = Image.new("RGB", (160, 120), "red")
         black = Image.new("RGB", (160, 120), "black")
-        self.red_image = ImageTk.PhotoImage(red)
         self.black_image = ImageTk.PhotoImage(black)
 
     def toggle_switch_changed(self, is_on, pane):

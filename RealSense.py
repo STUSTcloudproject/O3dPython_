@@ -31,8 +31,8 @@ class RealSense:
             self.stop_event.set()  # 设置停止事件
             self.thread.join()  # 等待线程终止
     
-    def toggle_config(self, settings): #w
-        # self._stop_thread()
+    def toggle_config(self, settings):
+        self._stop_thread()
         valid_stream_types = ['color', 'depth', 'infrared']
         for stream_type in settings:
             if stream_type not in valid_stream_types:
@@ -80,15 +80,10 @@ class RealSense:
 
 
         
-    def stop_pipeline(self): #w
+    def stop_pipeline(self):
         # 首先设置停止事件，通知运行中的线程停止其操作
-        self.stop_event.set() #
-        
-        # 然后等待线程安全地结束
-        if self.thread is not None and self.thread.is_alive(): #
-            self.thread.join() #
 
-        # self._stop_thread()
+        self._stop_thread()
         
         # 最后，停止pipeline
         try:
@@ -154,10 +149,9 @@ class RealSense:
     def __enter__(self):
         return self
 
-    def __exit__(self, exc_type, exc_val, exc_tb): #w
+    def __exit__(self, exc_type, exc_val, exc_tb):
         self._stop_thread()
-        if self.is_pipeline_started: #
-            self.stop_pipeline() #<- 1tab
+        self.stop_pipeline() #<- 1tab
 
 if __name__ == "__main__":
     settings = {
@@ -171,4 +165,4 @@ if __name__ == "__main__":
         rs_device.restart_pipeline()
         # 此处可以进行数据处理
         time.sleep(3)  # 假设的处理时间
-    print("Pipeline stopped")
+    print("Program stopped")
