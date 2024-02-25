@@ -154,10 +154,10 @@ class RealSense:
     def __enter__(self):
         return self
 
-    def __exit__(self, exc_type, exc_val, exc_tb):
+    def __exit__(self, exc_type, exc_val, exc_tb): #w
         self._stop_thread()
-        if self.is_pipeline_started:
-            self.stop_pipeline()
+        if self.is_pipeline_started: #
+            self.stop_pipeline() #<- 1tab
 
 if __name__ == "__main__":
     settings = {
