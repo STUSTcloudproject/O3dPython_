@@ -82,11 +82,11 @@ class RealSense:
         
     def stop_pipeline(self): #w
         # 首先设置停止事件，通知运行中的线程停止其操作
-        self.stop_event.set()
+        self.stop_event.set() #
         
         # 然后等待线程安全地结束
-        if self.thread is not None and self.thread.is_alive():
-            self.thread.join()
+        if self.thread is not None and self.thread.is_alive(): #
+            self.thread.join() #
 
         # self._stop_thread()
         
