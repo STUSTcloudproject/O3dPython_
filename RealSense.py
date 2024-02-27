@@ -132,7 +132,7 @@ class RealSense:
                 # 如果pipeline没有启动，稍微延迟循环，减少CPU占用
                 time.sleep(0.1)
             #print('running...')
-            time.sleep(0.05)  # 控制循环频率
+            time.sleep(0.025)  # 控制循环频率
 
     def get_depth_image(self):
         with self.lock:

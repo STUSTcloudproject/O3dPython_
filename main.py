@@ -17,7 +17,6 @@ class MainApp:
         self.app = GUI.App(toggle_callback=self.toggle_switch_changed)
         self.app.protocol("WM_DELETE_WINDOW", self.close_program)
         self.create_image_placeholders()
-        self.image_processor = ImageProcessor()
         # RealSense实例将在__enter__方法中创建
         self.rs_device = None
 
@@ -90,15 +89,15 @@ class MainApp:
                 if stream_type == "depth":
                     depth_image = self.rs_device.get_depth_image()
                     if depth_image is not None:
-                        target_image = self.image_processor.process_and_resize_depth_image(depth_image, target_width, target_height)
+                        target_image = ImageProcessor.process_and_resize_depth_image(depth_image, target_width, target_height)
                 elif stream_type == "infrared":
                     infrared_image = self.rs_device.get_infrared_image()
                     if infrared_image is not None:
-                        target_image = self.image_processor.process_and_resize_infrared_image(infrared_image, target_width, target_height)
+                        target_image = ImageProcessor.process_and_resize_infrared_image(infrared_image, target_width, target_height)
                 elif stream_type == "color":
                     color_image = self.rs_device.get_color_image()
                     if color_image is not None:
-                        target_image = self.image_processor.process_and_resize_color_image(color_image, target_width, target_height)
+                        target_image = ImageProcessor.process_and_resize_color_image(color_image, target_width, target_height)
 
             # 更新GUI中相应的图像显示
             if stream_type == "depth":
