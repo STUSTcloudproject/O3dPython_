@@ -37,7 +37,7 @@ class MainApp:
         black = Image.new("RGB", (160, 120), "black")
         self.black_image = ImageTk.PhotoImage(black)
 
-    def callback_function(self, mode, is_on, pane):
+    def callback_function(self, mode, is_on=False, pane=None):
         if mode == "ToggleConfig":
             try:
                 combo_value = pane.sub_frame.combo.get()
@@ -54,6 +54,8 @@ class MainApp:
                 print(self.settings)
             except Exception as e:
                 print(f"An error occurred: {e}")
+        elif mode == "CapturePhoto":
+            print("Photo capture")
 
     def restart_real_sense(self, settings):
         if not self.rs_device.is_pipeline_started:

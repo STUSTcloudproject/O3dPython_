@@ -7,6 +7,8 @@ class App(tk.Tk):
     def __init__(self, toggle_callback=None):
         super().__init__()
         
+        self.toggle_callback = toggle_callback
+        
         self.size_lock = threading.Lock()   
         
         # 設定應用視窗的標題和大小
@@ -96,6 +98,10 @@ class App(tk.Tk):
         self.color_stream.pack(fill="x", expand=0, padx=4, pady=4)
         self._add_stream_setting(self.color_stream.sub_frame, ["640 x 360", "640 x 480"])
 
+        # 在左側面板底部添加一個名為"拍照"的按鈕
+        self.capture_button = tk.Button(self.left_panel, text="Capture", width=20, height=3, command=self.capture_photo)
+        self.capture_button.pack(side="bottom", fill="x", padx=8, pady=8)
+
     def _setup_right_panel(self):
         # 確保 right_panel 能夠根據內容自動調整大小
         self.right_panel.pack_propagate(False)
@@ -112,6 +118,14 @@ class App(tk.Tk):
 
         # 布局框架和標籤
         self._adjust_right_panel_layout()
+    
+    def capture_photo(self):
+        click_callback = self.toggle_callback
+        if click_callback is not None:
+            click_callback('CapturePhoto')
+        else:
+            print("Photo function is not yet available")
+        
     
     def _adjust_right_panel_layout(self):
         
