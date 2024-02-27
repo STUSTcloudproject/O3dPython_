@@ -151,7 +151,7 @@ class RealSense:
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         self._stop_thread()
-        self.stop_pipeline() #<- 1tab
+        self.stop_pipeline()
 
 if __name__ == "__main__":
     settings = {

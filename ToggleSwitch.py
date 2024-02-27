@@ -18,4 +18,4 @@ class ToggleSwitch(tk.Canvas):
             self.move("slider", -20, 0)
             self['bg'] = 'red'
         if self.callback:  # 检查回调函数是否存在
-            self.callback(self.is_on, self.pane)  # 调用回调函数，并传递开关的当前状态
+            self.callback('ToggleConfig', self.is_on, self.pane)  # 调用回调函数，并传递开关的当前状态

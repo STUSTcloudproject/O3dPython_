@@ -14,7 +14,7 @@ class MainApp:
             "infrared": {"enabled": False, "resolution": "640 x 360"},
             "color": {"enabled": False, "resolution": "320 x 240"},
         }
-        self.app = GUI.App(toggle_callback=self.toggle_switch_changed)
+        self.app = GUI.App(toggle_callback=self.callback_function)
         self.app.protocol("WM_DELETE_WINDOW", self.close_program)
         self.create_image_placeholders()
         # RealSense实例将在__enter__方法中创建
@@ -37,22 +37,23 @@ class MainApp:
         black = Image.new("RGB", (160, 120), "black")
         self.black_image = ImageTk.PhotoImage(black)
 
-    def toggle_switch_changed(self, is_on, pane):
-        try:
-            combo_value = pane.sub_frame.combo.get()
-            stream_type = pane.title_label["text"].strip().lower().replace(" stream", "")
-            print("Stream type:", stream_type)
-            with self.settings_lock:
-                if stream_type in self.settings:
-                    self.settings[stream_type]["enabled"] = is_on
-                    self.settings[stream_type]["resolution"] = combo_value
-                else:
-                    print(f"Unrecognized stream type: {stream_type}")
-            self.stop_real_sense()
-            self.restart_real_sense(self.settings)
-            print(self.settings)
-        except Exception as e:
-            print(f"An error occurred: {e}")
+    def callback_function(self, mode, is_on, pane):
+        if mode == "ToggleConfig":
+            try:
+                combo_value = pane.sub_frame.combo.get()
+                stream_type = pane.title_label["text"].strip().lower().replace(" stream", "")
+                print("Stream type:", stream_type)
+                with self.settings_lock:
+                    if stream_type in self.settings:
+                        self.settings[stream_type]["enabled"] = is_on
+                        self.settings[stream_type]["resolution"] = combo_value
+                    else:
+                        print(f"Unrecognized stream type: {stream_type}")
+                self.stop_real_sense()
+                self.restart_real_sense(self.settings)
+                print(self.settings)
+            except Exception as e:
+                print(f"An error occurred: {e}")
 
     def restart_real_sense(self, settings):
         if not self.rs_device.is_pipeline_started:
