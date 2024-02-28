@@ -5,6 +5,7 @@ import tkinter
 from RealSense import RealSense
 from ImageProcessor import ImageProcessor
 from SizeCalculator import SizeCalculator
+from ImageSaver import ImageSaver
 
 class MainApp:
     def __init__(self):
@@ -39,23 +40,39 @@ class MainApp:
 
     def callback_function(self, mode, is_on=False, pane=None):
         if mode == "ToggleConfig":
-            try:
-                combo_value = pane.sub_frame.combo.get()
-                stream_type = pane.title_label["text"].strip().lower().replace(" stream", "")
-                print("Stream type:", stream_type)
-                with self.settings_lock:
-                    if stream_type in self.settings:
-                        self.settings[stream_type]["enabled"] = is_on
-                        self.settings[stream_type]["resolution"] = combo_value
-                    else:
-                        print(f"Unrecognized stream type: {stream_type}")
-                self.stop_real_sense()
-                self.restart_real_sense(self.settings)
-                print(self.settings)
-            except Exception as e:
-                print(f"An error occurred: {e}")
+            self.toggle_config(is_on, pane)
         elif mode == "CapturePhoto":
-            print("Photo capture")
+            self.photo_capture()
+    
+    def toggle_config(self, is_on=False, pane=None):
+        try:
+            combo_value = pane.sub_frame.combo.get()
+            stream_type = pane.title_label["text"].strip().lower().replace(" stream", "")
+            print("Stream type:", stream_type)
+            with self.settings_lock:
+                if stream_type in self.settings:
+                    self.settings[stream_type]["enabled"] = is_on
+                    self.settings[stream_type]["resolution"] = combo_value
+                else:
+                    print(f"Unrecognized stream type: {stream_type}")
+            self.stop_real_sense()
+            self.restart_real_sense(self.settings)
+            print(self.settings)
+        except Exception as e:
+            print(f"An error occurred: {e}")
+
+    def photo_capture(self):
+        
+        depth_intrinsics = self.rs_device.get_depth_intrinsics() if self.settings.get('depth', {}).get('enabled') else None
+        ImageSaver.photo_capture(
+            self.settings,
+            depth_image=self.rs_device.get_depth_image() if self.settings.get('depth', {}).get('enabled') else None,
+            infrared_image=self.rs_device.get_infrared_image() if self.settings.get('infrared', {}).get('enabled') else None,
+            color_image=self.rs_device.get_color_image() if self.settings.get('color', {}).get('enabled') else None,
+            depth_intrinsics=depth_intrinsics  # 确保这里传递 depth_intrinsics
+        )
+        print("Photo capture")
+
 
     def restart_real_sense(self, settings):
         if not self.rs_device.is_pipeline_started:

@@ -18,6 +18,7 @@ class RealSense:
         self.is_color_enabled = False
         self.color_resolution = '640 x 360'
 
+        self.depth_frame = None
         self.depth_image = None
         self.color_image = None
         self.infrared_image = None
@@ -115,9 +116,9 @@ class RealSense:
 
                 with self.lock:  # 使用锁来确保线程安全
                     if self.is_depth_enabled:
-                        depth_frame = frames.get_depth_frame()
-                        if depth_frame:
-                            self.depth_image = np.asanyarray(depth_frame.get_data())
+                        self.depth_frame = frames.get_depth_frame()
+                        if self.depth_frame:
+                            self.depth_image = np.asanyarray(self.depth_frame.get_data())
 
                     if self.is_color_enabled:
                         color_frame = frames.get_color_frame()
@@ -133,6 +134,22 @@ class RealSense:
                 time.sleep(0.1)
             #print('running...')
             time.sleep(0.025)  # 控制循环频率
+    
+    def get_depth_intrinsics(self):
+        with self.lock:
+            if self.is_pipeline_started and self.is_depth_enabled:
+                profile = self.pipeline.get_active_profile()
+                depth_profile = rs.video_stream_profile(profile.get_stream(rs.stream.depth))
+                intrinsics = depth_profile.get_intrinsics()
+                return intrinsics
+            else:
+                print("Pipeline has not started or depth stream is not enabled.")
+                return None
+
+
+    def get_depth_frame(self):
+        with self.lock:
+            return self.depth_frame
 
     def get_depth_image(self):
         with self.lock:
