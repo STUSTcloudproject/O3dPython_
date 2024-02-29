@@ -9,11 +9,17 @@ import pyrealsense2 as rs
 
 class ImageSaver:
     @staticmethod
-    def save_image(image, path, image_type):
+    def save_image(image, path, image_type='photo'):
         """將圖像保存為文件"""
-        img = Image.fromarray(image)
-        img.save(path)
-        print(f"{image_type.capitalize()} image saved successfully at {path}")
+        if isinstance(image, np.ndarray):
+            # 如果圖像是 NumPy 數組，先轉換為 PIL 圖像
+            image = Image.fromarray(image)
+        try:
+            # 保存圖像到指定路徑
+            image.save(path)
+            print(f"{image_type.capitalize()} image saved successfully at {path}")
+        except Exception as e:
+            print(f"Failed to save {image_type} image at {path}: {e}")
 
     @staticmethod
     def save_point_cloud(depth_image, depth_intrinsics, path, cloud_type):
@@ -50,13 +56,14 @@ class ImageSaver:
         """根据设置捕获图像并保存"""
         # 确定 history 文件夹的路径
         history_path = os.path.join(os.getcwd(), "history")
-        if not os.path.exists(history_path):
-            os.makedirs(history_path)
+        # 如果 history 目录不存在，则创建
+        os.makedirs(history_path, exist_ok=True)
 
         # 创建以当前时间命名的文件夹
         now = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
         session_path = os.path.join(history_path, now)
-        os.makedirs(session_path)
+        # 使用 exist_ok=True 参数来避免 FileExistsError
+        os.makedirs(session_path, exist_ok=True)
 
         # 根据设置保存深度图像
         if settings.get('depth', {}).get('enabled') and depth_image is not None:
