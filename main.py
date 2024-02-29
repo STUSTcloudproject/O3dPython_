@@ -62,16 +62,19 @@ class MainApp:
             print(f"An error occurred: {e}")
 
     def photo_capture(self):
-        
-        depth_intrinsics = self.rs_device.get_depth_intrinsics() if self.settings.get('depth', {}).get('enabled') else None
-        ImageSaver.photo_capture(
-            self.settings,
-            depth_image=self.rs_device.get_depth_image() if self.settings.get('depth', {}).get('enabled') else None,
-            infrared_image=self.rs_device.get_infrared_image() if self.settings.get('infrared', {}).get('enabled') else None,
-            color_image=self.rs_device.get_color_image() if self.settings.get('color', {}).get('enabled') else None,
-            depth_intrinsics=depth_intrinsics  # 确保这里传递 depth_intrinsics
-        )
-        print("Photo capture")
+        with self.settings_lock:
+            if any(self.settings.get(stream, {}).get('enabled', False) for stream in ['depth', 'infrared', 'color']):    
+                depth_intrinsics = self.rs_device.get_depth_intrinsics() if self.settings.get('depth', {}).get('enabled') else None
+                ImageSaver.photo_capture(
+                    self.settings,
+                    depth_image=self.rs_device.get_depth_image() if self.settings.get('depth', {}).get('enabled') else None,
+                    infrared_image=self.rs_device.get_infrared_image() if self.settings.get('infrared', {}).get('enabled') else None,
+                    color_image=self.rs_device.get_color_image() if self.settings.get('color', {}).get('enabled') else None,
+                    depth_intrinsics=depth_intrinsics  # 确保这里传递 depth_intrinsics
+                )
+                print("Photo capture succeeded.")
+            else:
+                print("No stream is enabled. Skipping photo capture.")
 
 
     def restart_real_sense(self, settings):

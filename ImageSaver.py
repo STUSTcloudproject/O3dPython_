@@ -1,4 +1,5 @@
 import os
+import cv2
 import datetime
 import open3d as o3d
 import numpy as np
@@ -73,5 +74,6 @@ class ImageSaver:
 
         # 根据设置保存彩色图像
         if settings.get('color', {}).get('enabled') and color_image is not None:
+            color_image = cv2.cvtColor(color_image, cv2.COLOR_BGR2RGB)
             color_image_path = os.path.join(session_path, "color.png")
             ImageSaver.save_image(color_image, color_image_path, "Color")
