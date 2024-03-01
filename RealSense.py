@@ -146,6 +146,25 @@ class RealSense:
                 print("Pipeline has not started or depth stream is not enabled.")
                 return None
 
+    def list_devices(self):
+        # 使用pyrealsense2查询连接的设备
+        ctx = rs.context()
+        devices = ctx.query_devices()
+        if not devices:
+            print("No RealSense devices were found.")
+            return []
+
+        device_list = []
+        for dev in devices:
+            # 获取设备的序列号作为唯一标识
+            # 你也可以选择其他属性，如设备名称等
+            device_serial = dev.get_info(rs.camera_info.serial_number)
+            device_name = dev.get_info(rs.camera_info.name)
+            device_desc = f"{device_name} (SN: {device_serial})"
+            device_list.append(device_desc)
+
+        return device_list
+
 
     def get_depth_frame(self):
         with self.lock:
@@ -178,6 +197,7 @@ if __name__ == "__main__":
     }
 
     with RealSense() as rs_device:
+        print(rs_device.list_devices())
         rs_device.toggle_config(settings)
         rs_device.restart_pipeline()
         # 此处可以进行数据处理

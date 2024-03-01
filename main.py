@@ -14,12 +14,14 @@ class MainApp:
         self.app = GUI.App(toggle_callback=self.callback_function)
         self.app.protocol("WM_DELETE_WINDOW", self.close_program)
         self.create_image_placeholders()
-        # RealSense实例将在__enter__方法中创建
         self.update_display_active = True
         self.rs_device = None
 
     def __enter__(self):
         self.rs_device = RealSense().__enter__()  # 创建并初始化RealSense实例
+        device_list = self.rs_device.list_devices()  # 获取设备列表
+        device_list.insert(0, "")
+        self.app.update_device_options(device_list)  # 更新GUI中的下拉框选项
         # 启动后台线程来监视settings并更新GUI
         self.update_thread = threading.Thread(target=self.update_display_loop, daemon=True)
         self.update_thread.start()
@@ -44,11 +46,13 @@ class MainApp:
         black = Image.new("RGB", (160, 120), "black")
         self.black_image = ImageTk.PhotoImage(black)
 
-    def callback_function(self, mode, is_on=False, pane=None):
+    def callback_function(self, mode, is_on=False, pane=None, device_info=None):
         if mode == "ToggleConfig":
             self.toggle_config(is_on, pane)
         elif mode == "CapturePhoto":
             self.photo_capture()
+        elif mode == "DeviceSelected":
+            self.device_selected(device_info)
     
     def toggle_config(self, is_on=False, pane=None):
         try:
@@ -81,6 +85,9 @@ class MainApp:
                 print("Photo capture succeeded.")
             else:
                 print("No stream is enabled. Skipping photo capture.")
+    
+    def device_selected(self, device_info):
+        print(f"Device selected: {device_info}")
 
     def restart_real_sense(self, settings):
         if not self.rs_device.is_pipeline_started:

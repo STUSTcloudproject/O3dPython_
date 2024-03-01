@@ -84,7 +84,58 @@ class App(tk.Tk):
         for i in range(1, 4):
             ttk.Checkbutton(parent, text=f"Setting Option {i}").pack(side="top", fill="x", expand=0)
     
+    def _add_device_selector(self, parent, title, device_options):
+        # 创建设备选择的框架
+        device_frame = ttk.Frame(parent)
+        device_frame.pack(side="top", fill="x", expand=0, padx=4, pady=4)
+
+        # 在设备选择框架中添加标签和下拉框
+        ttk.Label(device_frame, text=title).pack(side="left")
+        self.device_combobox = ttk.Combobox(device_frame, values=device_options, state='readonly')  # 将combobox存储为类的属性
+        self.device_combobox.pack(side="left", fill="x", expand=1)
+        if device_options:  # 检查列表是否不为空
+            self.device_combobox.current(0)  # 默认选择第一个设备
+
+    def _add_device_selector(self, parent, title, device_options):
+        # 创建设备选择的框架
+        device_frame = ttk.Frame(parent)
+        device_frame.pack(side="top", fill="x", expand=0, padx=4, pady=4)
+
+        # 在设备选择框架中添加标签和下拉框
+        ttk.Label(device_frame, text=title).pack(side="left")
+        self.device_combobox = ttk.Combobox(device_frame, values=device_options, state='readonly')
+        self.device_combobox.pack(side="left", fill="x", expand=1)
+        
+        if device_options:  # 检查列表是否不为空
+            self.device_combobox.current(0)  # 默认选择第一个设备
+        
+        # 绑定<<ComboboxSelected>>事件到事件处理函数
+        self.device_combobox.bind("<<ComboboxSelected>>", self.on_device_selected)
+
+    def on_device_selected(self, event=None):
+        selected_device = self.device_combobox.get()
+        if selected_device == "":
+            self._hide_stream_options()
+        else:
+            self._show_stream_options()
+            # 在这里调用toggle_callback回调函数，并传递选定的设备信息
+            if self.toggle_callback:
+                self.toggle_callback(mode="DeviceSelected", device_info=selected_device)
+
+    def update_device_options(self, device_options):
+        """更新设备选择下拉框的选项"""
+        if hasattr(self, 'device_combobox'):
+            self.device_combobox['values'] = device_options
+            if device_options:
+                self.device_combobox.current(0)  # 默认选择第一个设备
+            else:
+                self.device_combobox.set('')  # 如果没有选项，则清空下拉框
+            self.on_device_selected()  # 调用事件处理函数以更新界面
+
     def _setup_left_panel(self, toggle_callback=None):
+        # 首先添加设备选择器
+        self._add_device_selector(self.left_panel, "Device: ", [""])
+
         # 添加可摺疊面板並設置其內容
         self.depth_stream = CollapsiblePane(self.left_panel, title="Depth Stream ", toggle_callback=toggle_callback)
         self.depth_stream.pack(fill="x", expand=0, padx=4, pady=4)  # 摺疊時不佔用額外空間
@@ -137,6 +188,20 @@ class App(tk.Tk):
         self.depth_frame.pack(fill=tk.BOTH, expand=True)
         self.infrared_frame.pack(fill=tk.BOTH, expand=True)
         self.color_frame.pack(fill=tk.BOTH, expand=True)
+
+    def _hide_stream_options(self):
+        """隐藏流选项和捕获按钮"""
+        self.depth_stream.pack_forget()
+        self.infrared_stream.pack_forget()
+        self.color_stream.pack_forget()
+        self.capture_button.pack_forget()
+
+    def _show_stream_options(self):
+        """显示流选项和捕获按钮"""
+        self.depth_stream.pack(fill="x", expand=0, padx=4, pady=4)
+        self.infrared_stream.pack(fill="x", expand=0, padx=4, pady=4)
+        self.color_stream.pack(fill="x", expand=0, padx=4, pady=4)
+        self.capture_button.pack(side="bottom", fill="x", padx=8, pady=8)
         
     # 可以設定右側面板的圖片屬性
     def set_depth_image(self, image):
