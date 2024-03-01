@@ -10,28 +10,34 @@ from ImageSaver import ImageSaver
 class MainApp:
     def __init__(self):
         self.settings_lock = threading.Lock()
-        self.settings = {
-            "depth": {"enabled": False, "resolution": "320 x 240"},
-            "infrared": {"enabled": False, "resolution": "640 x 360"},
-            "color": {"enabled": False, "resolution": "320 x 240"},
-        }
+        self.settings = self.init_settings()
         self.app = GUI.App(toggle_callback=self.callback_function)
         self.app.protocol("WM_DELETE_WINDOW", self.close_program)
         self.create_image_placeholders()
         # RealSense实例将在__enter__方法中创建
+        self.update_display_active = True
         self.rs_device = None
 
     def __enter__(self):
         self.rs_device = RealSense().__enter__()  # 创建并初始化RealSense实例
         # 启动后台线程来监视settings并更新GUI
-        self.update_thread = threading.Thread(target=self.monitor_settings_and_update_gui, daemon=True)
+        self.update_thread = threading.Thread(target=self.update_display_loop, daemon=True)
         self.update_thread.start()
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         # 清理RealSense资源
+        self.update_display_active = False
         if self.rs_device:
             self.rs_device.__exit__(exc_type, exc_val, exc_tb)
+
+    def init_settings(self):
+        # 初始化设置，提高代码的结构性和可读性
+        return {
+            "depth": {"enabled": False, "resolution": "320 x 240"},
+            "infrared": {"enabled": False, "resolution": "640 x 360"},
+            "color": {"enabled": False, "resolution": "320 x 240"},
+        }
 
     def create_image_placeholders(self):
         # 创建红色和黑色图像作为占位符
@@ -76,7 +82,6 @@ class MainApp:
             else:
                 print("No stream is enabled. Skipping photo capture.")
 
-
     def restart_real_sense(self, settings):
         if not self.rs_device.is_pipeline_started:
             self.update_real_sense(settings)
@@ -86,11 +91,12 @@ class MainApp:
             self.rs_device.stop_pipeline()
     
     def update_real_sense(self, settings):
-        self.rs_device.toggle_config(settings)
-        self.rs_device.restart_pipeline()
+        with self.settings_lock:
+            self.rs_device.toggle_config(settings)
+            self.rs_device.restart_pipeline()
 
-    def monitor_settings_and_update_gui(self):
-        while True:
+    def update_display_loop(self):
+        while self.update_display_active:
             with self.settings_lock:
                 current_settings = self.settings.copy()
             
