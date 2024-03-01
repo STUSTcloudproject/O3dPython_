@@ -56,8 +56,8 @@ class MainApp:
     
     def toggle_config(self, is_on=False, pane=None):
         try:
-            combo_value = pane.sub_frame.combo.get()
-            stream_type = pane.title_label["text"].strip().lower().replace(" stream", "")
+            combo_value = pane.get_combo_value()
+            stream_type = pane.get_stream_type()
             print("Stream type:", stream_type)
             with self.settings_lock:
                 if stream_type in self.settings:

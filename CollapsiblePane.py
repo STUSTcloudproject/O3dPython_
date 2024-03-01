@@ -36,3 +36,12 @@ class CollapsiblePane(tk.Frame):
             self.sub_frame.forget()
             self.details_button.configure(text='▶')
         self._is_collapsed = not self._is_collapsed
+
+    def get_combo_value(self):
+        """获取下拉菜单(combo)的当前选中值"""
+        return self.sub_frame.combo.get()
+
+    def get_stream_type(self):
+        """获取并处理标题标签中的流类型"""
+        stream_type_raw = self.title_label["text"]
+        return stream_type_raw.strip().lower().replace(" stream", "")
