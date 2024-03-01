@@ -38,10 +38,21 @@ class CollapsiblePane(tk.Frame):
         self._is_collapsed = not self._is_collapsed
 
     def get_combo_value(self):
-        """获取下拉菜单(combo)的当前选中值"""
-        return self.sub_frame.combo.get()
+        """获取下拉菜单(combo)的当前选中值。"""
+        try:
+            return self.sub_frame.combo.get()
+        except AttributeError:
+            # 当combo不存在时返回一个默认值或抛出异常
+            print("Combo box is not initialized.")
+            return None  # 或者抛出异常
+
 
     def get_stream_type(self):
-        """获取并处理标题标签中的流类型"""
-        stream_type_raw = self.title_label["text"]
-        return stream_type_raw.strip().lower().replace(" stream", "")
+        """获取并处理标题标签中的流类型。"""
+        try:
+            stream_type_raw = self.title_label["text"]
+            return stream_type_raw.strip().lower().replace(" stream", "")
+        except AttributeError:
+            # 当title_label不存在时返回一个默认值或抛出异常
+            print("Title label is not initialized.")
+            return ""  # 或者抛出异常
