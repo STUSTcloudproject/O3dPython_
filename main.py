@@ -23,7 +23,7 @@ class MainApp:
         device_list.insert(0, "")
         self.app.update_device_options(device_list)  # 更新GUI中的下拉框选项
         # 启动后台线程来监视settings并更新GUI
-        self.update_thread = threading.Thread(target=self.update_display_loop, daemon=True)
+        self.update_thread = threading.Thread(target=self._update_display_loop, daemon=True)
         self.update_thread.start()
         return self
 
@@ -91,27 +91,24 @@ class MainApp:
 
     def restart_real_sense(self, settings):
         if not self.rs_device.is_pipeline_started:
-            self.update_real_sense(settings)
+            with self.settings_lock:
+                self.rs_device.toggle_config(settings)
+                self.rs_device.restart_pipeline()
 
     def stop_real_sense(self):
         if self.rs_device.is_pipeline_started:
             self.rs_device.stop_pipeline()
     
-    def update_real_sense(self, settings):
-        with self.settings_lock:
-            self.rs_device.toggle_config(settings)
-            self.rs_device.restart_pipeline()
-
-    def update_display_loop(self):
+    def _update_display_loop(self):
         while self.update_display_active:
             with self.settings_lock:
                 current_settings = self.settings.copy()
             
             # 使用主线程安全更新GUI
-            self.app.after(0, lambda: self.update_gui_based_on_settings(current_settings))
+            self.app.after(0, lambda: self._update_gui_based_on_settings(current_settings))
             threading.Event().wait(0.1)  # 检查频率调整为每秒一次
 
-    def update_gui_based_on_settings(self, settings):
+    def _update_gui_based_on_settings(self, settings):
         window_width, window_height = self.app.get_window_size()
         left_panel_width, right_panel_width = self.app.get_panel_widths()
 
