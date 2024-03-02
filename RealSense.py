@@ -17,6 +17,7 @@ class RealSense:
         self.infrared_resolution = '320 x 240'
         self.is_color_enabled = False
         self.color_resolution = '640 x 360'
+        self.device = 'None'
 
         self.depth_frame = None
         self.depth_image = None
@@ -33,25 +34,33 @@ class RealSense:
             self.thread.join()  # 等待线程终止
     
     def toggle_config(self, settings):
-        self._stop_thread()
-        valid_stream_types = ['color', 'depth', 'infrared']
-        for stream_type in settings:
-            if stream_type not in valid_stream_types:
-                raise KeyError(f"Invalid stream type: {stream_type}")
-            
-            stream_settings = settings[stream_type]
-            if 'enabled' not in stream_settings or 'resolution' not in stream_settings:
-                raise KeyError(f"Missing keys in settings for {stream_type}")
-            
-            enabled_key = f'is_{stream_type}_enabled'
-            resolution_key = f'{stream_type}_resolution'
-            
-            setattr(self, enabled_key, stream_settings['enabled'])
-            setattr(self, resolution_key, stream_settings['resolution'])
+        self._stop_thread()  # 停止当前的处理线程，准备应用新的配置
 
+        # 定义流类型到属性名称的映射
+        stream_type_mapping = {
+            'color': ('is_color_enabled', 'color_resolution'),
+            'depth': ('is_depth_enabled', 'depth_resolution'),
+            'infrared': ('is_infrared_enabled', 'infrared_resolution'),
+        }
+
+        # 遍历预定义的流类型映射，而不是直接遍历设置字典
+        for stream_type, (enabled_attr, resolution_attr) in stream_type_mapping.items():
+            if stream_type in settings:
+                stream_settings = settings[stream_type]
+                # 直接更新对应的属性
+                setattr(self, enabled_attr, stream_settings.get('enabled', False))
+                setattr(self, resolution_attr, stream_settings.get('resolution', ''))
+        
+        # 特殊处理设备设置，如果需要的话
+        self.device = settings.get('device', {}).get('selected')
 
     def _config_streams(self):
         self.config = rs.config()
+        # 如果已选择设备，则使用设备的序列号进行配置
+        if self.device:  # self.device 现在应该是序列号
+            print(f"Configuring for device with serial number: {self.device}")
+            self.config.enable_device(self.device)
+
         for stream_type in ['color', 'depth', 'infrared']:
             enabled_key = f'is_{stream_type}_enabled'
             resolution_key = f'{stream_type}_resolution'
@@ -65,11 +74,17 @@ class RealSense:
                 elif stream_type == 'infrared':
                     self.config.enable_stream(rs.stream.infrared, 0, int(parts[0]), int(parts[1]), rs.format.y8, 30)
 
+
     def restart_pipeline(self):
         self._stop_thread()  # 停止当前的处理线程
+        self._config_streams()  # 根据最新的配置设置pipeline
+        # 在 _config_streams() 调用后再检查 self.device
+        if self.device == 'None':
+            print("No device selected, cannot restart pipeline.")
+            return  # 早期返回，不执行后续操作
+
         try:
             self.stop_pipeline()  # 停止当前的pipeline
-            self._config_streams()  # 根据最新的配置设置pipeline
             self.pipeline.start(self.config)  # 重新启动pipeline
             print("Pipeline started successfully")
             self.is_pipeline_started = True
@@ -77,8 +92,6 @@ class RealSense:
         except Exception as e:
             self.is_pipeline_started = False
             print(f"An error occurred when restarting the pipeline: {e}")
-            raise e
-
 
         
     def stop_pipeline(self):

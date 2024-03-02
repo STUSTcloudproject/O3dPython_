@@ -114,13 +114,13 @@ class App(tk.Tk):
 
     def on_device_selected(self, event=None):
         selected_device = self.device_combobox.get()
-        if selected_device == "":
+        if selected_device == "None":
             self._hide_stream_options()
         else:
             self._show_stream_options()
             # 在这里调用toggle_callback回调函数，并传递选定的设备信息
-            if self.toggle_callback:
-                self.toggle_callback(mode="DeviceSelected", device_info=selected_device)
+        if self.toggle_callback:
+            self.toggle_callback(mode="DeviceSelected", device_info=selected_device)
 
     def update_device_options(self, device_options):
         """更新设备选择下拉框的选项"""
@@ -128,9 +128,11 @@ class App(tk.Tk):
             self.device_combobox['values'] = device_options
             if device_options:
                 self.device_combobox.current(0)  # 默认选择第一个设备
+                selected_device = self.device_combobox.get()
+                if selected_device == "None":
+                    self._hide_stream_options()
             else:
                 self.device_combobox.set('')  # 如果没有选项，则清空下拉框
-            self.on_device_selected()  # 调用事件处理函数以更新界面
 
     def _setup_left_panel(self, toggle_callback=None):
         # 首先添加设备选择器
@@ -202,6 +204,11 @@ class App(tk.Tk):
         self.infrared_stream.pack(fill="x", expand=0, padx=4, pady=4)
         self.color_stream.pack(fill="x", expand=0, padx=4, pady=4)
         self.capture_button.pack(side="bottom", fill="x", padx=8, pady=8)
+
+    def reset_toggle_switches(self):
+        """重置所有流的开关状态为 'off'。"""
+        for pane in [self.depth_stream, self.infrared_stream, self.color_stream]:
+            pane.toggle_switch.set_state(False)
         
     # 可以設定右側面板的圖片屬性
     def set_depth_image(self, image):

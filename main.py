@@ -20,7 +20,7 @@ class MainApp:
     def __enter__(self):
         self.rs_device = RealSense().__enter__()  # 创建并初始化RealSense实例
         device_list = self.rs_device.list_devices()  # 获取设备列表
-        device_list.insert(0, "")
+        device_list.insert(0, "None")
         self.app.update_device_options(device_list)  # 更新GUI中的下拉框选项
         # 启动后台线程来监视settings并更新GUI
         self.update_thread = threading.Thread(target=self._update_display_loop, daemon=True)
@@ -34,11 +34,11 @@ class MainApp:
             self.rs_device.__exit__(exc_type, exc_val, exc_tb)
 
     def init_settings(self):
-        # 初始化设置，提高代码的结构性和可读性
         return {
             "depth": {"enabled": False, "resolution": "320 x 240"},
             "infrared": {"enabled": False, "resolution": "640 x 360"},
             "color": {"enabled": False, "resolution": "320 x 240"},
+            "device": {"selected": None},  # 添加了新的设置项
         }
 
     def create_image_placeholders(self):
@@ -60,7 +60,7 @@ class MainApp:
             stream_type = pane.get_stream_type()
             print("Stream type:", stream_type)
             with self.settings_lock:
-                if stream_type in self.settings:
+                if stream_type in self.settings and stream_type != "device":  # 排除 device 配置项
                     self.settings[stream_type]["enabled"] = is_on
                     self.settings[stream_type]["resolution"] = combo_value
                 else:
@@ -87,7 +87,21 @@ class MainApp:
                 print("No stream is enabled. Skipping photo capture.")
     
     def device_selected(self, device_info):
+        serial_number = self.extract_serial_number(device_info)
+        with self.settings_lock:
+            self.settings = self.init_settings()
+            self.settings["device"]["selected"] = serial_number
+        self.stop_real_sense()
+        self.restart_real_sense(self.settings)
+        self.app.reset_toggle_switches()  # 重置 GUI 按钮状态
         print(f"Device selected: {device_info}")
+
+    def extract_serial_number(self, device_info):
+        # 提取设备序列号的逻辑
+        start = device_info.find('(SN: ') + 5
+        end = device_info.find(')', start)
+        serial_number = device_info[start:end]
+        return serial_number if start < end else None
 
     def restart_real_sense(self, settings):
         if not self.rs_device.is_pipeline_started:
@@ -116,8 +130,10 @@ class MainApp:
         target_width, target_height = SizeCalculator.calculate_target_size(window_height, right_panel_width)
 
         for stream_type, config in settings.items():
-            target_image = self.black_image  # 默认为黑色图像
-            if config["enabled"]:
+            if stream_type == "device":  # 跳过 device 配置项
+                continue
+            target_image = self.black_image
+            if "enabled" in config and config["enabled"]:  # 检查是否存在 "enabled"
                 # 根据流类型获取相应的图像并处理
                 if stream_type == "depth":
                     depth_image = self.rs_device.get_depth_image()
