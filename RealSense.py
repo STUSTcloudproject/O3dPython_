@@ -2,6 +2,7 @@ import pyrealsense2 as rs
 import numpy as np
 import threading
 import time
+from Settings import Settings
 
 class RealSense:
     def __init__(self):
@@ -33,9 +34,9 @@ class RealSense:
             self.stop_event.set()  # 设置停止事件
             self.thread.join()  # 等待线程终止
     
-    def toggle_config(self, settings):
-        self._stop_thread()  # 停止当前的处理线程，准备应用新的配置
-
+    def toggle_config(self, settings_instance):
+        self.stop_pipeline()
+        print(type(settings_instance))
         # 定义流类型到属性名称的映射
         stream_type_mapping = {
             'color': ('is_color_enabled', 'color_resolution'),
@@ -43,16 +44,14 @@ class RealSense:
             'infrared': ('is_infrared_enabled', 'infrared_resolution'),
         }
 
-        # 遍历预定义的流类型映射，而不是直接遍历设置字典
+        # 使用Settings实例中的新方法更新RealSense类的属性
         for stream_type, (enabled_attr, resolution_attr) in stream_type_mapping.items():
-            if stream_type in settings:
-                stream_settings = settings[stream_type]
-                # 直接更新对应的属性
-                setattr(self, enabled_attr, stream_settings.get('enabled', False))
-                setattr(self, resolution_attr, stream_settings.get('resolution', ''))
-        
-        # 特殊处理设备设置，如果需要的话
-        self.device = settings.get('device', {}).get('selected')
+            is_enabled, resolution = settings_instance.get_stream_info(stream_type)
+            setattr(self, enabled_attr, is_enabled)
+            setattr(self, resolution_attr, resolution)
+
+        # 特殊处理设备设置
+        self.device = settings_instance.get_setting('device').get('selected', 'None') if settings_instance.get_setting('device') else 'None'
 
     def _config_streams(self):
         self.config = rs.config()
@@ -180,6 +179,15 @@ class RealSense:
 
         return device_list
 
+    def extract_serial_number(self, device_info):
+        # 提取设备序列号的逻辑
+        if device_info != "None" and device_info is not None:
+            start = device_info.find('(SN: ') + 5
+            end = device_info.find(')', start)
+            serial_number = device_info[start:end]
+            return serial_number if start < end else None
+        else:
+            return "None"
 
     def get_depth_frame(self):
         with self.lock:
