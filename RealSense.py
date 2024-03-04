@@ -57,9 +57,11 @@ class RealSense:
     def _config_streams(self):
         self.config = rs.config()
         # 如果已选择设备，则使用设备的序列号进行配置
-        if self.device:  # self.device 现在应该是序列号
+        if self.device != 'None':
             print(f"Configuring for device with serial number: {self.device}")
             self.config.enable_device(self.device)
+        else:
+            print("No device selected, configuring for any connected device.")
 
         for stream_type in ['color', 'depth', 'infrared']:
             enabled_key = f'is_{stream_type}_enabled'

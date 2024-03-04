@@ -87,6 +87,7 @@ class MainApp:
                 print("No stream is enabled. Skipping photo capture.")
     
     def device_selected(self, device_info):
+        print(f"Device selected: {device_info}")
         serial_number = self.extract_serial_number(device_info)
         with self.settings_lock:
             self.settings = self.init_settings()
@@ -94,14 +95,17 @@ class MainApp:
         self.stop_real_sense()
         self.restart_real_sense(self.settings)
         self.app.reset_toggle_switches()  # 重置 GUI 按钮状态
-        print(f"Device selected: {device_info}")
+        print("Device selected successfully.")
 
     def extract_serial_number(self, device_info):
         # 提取设备序列号的逻辑
-        start = device_info.find('(SN: ') + 5
-        end = device_info.find(')', start)
-        serial_number = device_info[start:end]
-        return serial_number if start < end else None
+        if device_info != "None" and device_info is not None:
+            start = device_info.find('(SN: ') + 5
+            end = device_info.find(')', start)
+            serial_number = device_info[start:end]
+            return serial_number if start < end else None
+        else:
+            return "None"
 
     def restart_real_sense(self, settings):
         if not self.rs_device.is_pipeline_started:
