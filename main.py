@@ -93,14 +93,18 @@ class MainApp:
     def _update_gui_based_on_settings(self, settings):
         window_width, window_height = self.app.get_window_size()
         left_panel_width, right_panel_width = self.app.get_panel_widths()
+        target_width, target_height = ImageProcessor.calculate_target_size(window_height, right_panel_width)
 
-        # 调用select_image方法获取图像列表
-        target_images = ImageProcessor.select_image(settings, window_height, right_panel_width, self.rs_device, self.black_image)
+        for stream_type in ['depth', 'infrared', 'color']:
+            # 获取图像数据
+            image_data = getattr(self.rs_device, f"get_{stream_type}_image")()
 
-        # 使用zip同时迭代流类型和对应的图像
-        for stream_type, target_image in zip(['depth', 'infrared', 'color'], target_images):
+            # 调用select_image方法处理图像
+            target_image = ImageProcessor.select_image(settings, image_data, stream_type, self.black_image, target_width, target_height)
+
             # 更新GUI中相应的图像显示
             getattr(self.app, f"set_{stream_type}_image")(target_image)
+
 
     def close_program(self):
         # 先停止RealSense设备

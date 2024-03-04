@@ -36,7 +36,6 @@ class RealSense:
     
     def toggle_config(self, settings_instance):
         self.stop_pipeline()
-        print(type(settings_instance))
         # 定义流类型到属性名称的映射
         stream_type_mapping = {
             'color': ('is_color_enabled', 'color_resolution'),

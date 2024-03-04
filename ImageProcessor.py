@@ -62,17 +62,12 @@ class ImageProcessor:
         return target_width, target_height
     
     @staticmethod
-    def select_image(settings, window_height, right_panel_width, rs_device, black_image):
-        target_width, target_height = ImageProcessor.calculate_target_size(window_height, right_panel_width)
-        images = []
-        for stream_type in ['depth', 'infrared', 'color']:
-            if settings.is_stream_enabled(stream_type):
-                image_data = getattr(rs_device, f"get_{stream_type}_image")()
-                target_image = ImageProcessor.process_image_by_type(image_data, stream_type, target_width, target_height)
-            else:
-                target_image = black_image
-            images.append(target_image)
-        return images
+    def select_image(settings, image_data, stream_type, black_image, target_width, target_height):
+        if settings.is_stream_enabled(stream_type):
+            target_image = ImageProcessor.process_image_by_type(image_data, stream_type, target_width, target_height)
+        else:
+            target_image = black_image
+        return target_image
         
 
     @staticmethod
