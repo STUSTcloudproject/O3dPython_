@@ -6,7 +6,7 @@ RealSense Viewer 是一個基於 Intel RealSense 相機的圖形使用者介面�
 
 ## 架構
 
-該專案採用模組化設計，分為幾個主要模組，如 GUI 設計、影像處理、RealSense 控制和應用邏輯，以確保代碼的可維護性和可擴展性。
+項目包含了多個主要部分，如用戶界面的設計、圖片的處理、與 RealSense 相機的互動，以及核心的應用程序邏輯。
 
 ### 主要組件
 
@@ -18,7 +18,9 @@ RealSense Viewer 是一個基於 Intel RealSense 相機的圖形使用者介面�
 
 - **ImageProcessor ( `ImageProcessor.py` )**：負責影像的預處理，包括調整大小和顏色轉換。該模組作為處理 RealSense 相機原始數據與用戶界面展示之間的中介，確保影像數據能夠被有效處理和呈現。
 
-- **SizeCalculator ( `SizeCalculator.py` )**：計算影像顯示的目標大小，維持特定的長寬比。
+- **ImageSaver ( `ImageSaver.py` )**：實現影像和點雲的保存功能。
+
+- **Settings ( `Settings.py` )**：管理應用程式設置，如影像串流的啟用狀態和解析度。
 
 - **RealSense ( `RealSense.py` )**：封裝與 RealSense 相機交互的邏輯，包括配置、啟動和停止數據流。透過此模組，應用能夠靈活控制相機硬件，並根據實際需求調整相機設置。
 
@@ -33,7 +35,7 @@ RealSense Viewer 是一個基於 Intel RealSense 相機的圖形使用者介面�
 
 ## 環境設置
 
-本專案需要安裝 `pyrealsense2`、`numpy` 和 `Pillow`。您可以透過以下指令來安裝這些依賴：
+透過以下指令來安裝這些依賴：
 
 ```bash
 pip install -r requirements.txt
