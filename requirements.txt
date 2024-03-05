@@ -1,3 +1,5 @@
-pyrealsense2
-numpy
 Pillow
+opencv-python
+open3d
+numpy
+pyrealsense2
