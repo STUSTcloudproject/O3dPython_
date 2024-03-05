@@ -9,7 +9,6 @@ from Settings import Settings
 
 class MainApp:
     def __init__(self):
-        self.settings_lock = threading.Lock()
         self.settings = Settings()
         self.app = GUI.App(toggle_callback=self.callback_function)
         self.app.protocol("WM_DELETE_WINDOW", self.close_program)
@@ -42,13 +41,10 @@ class MainApp:
             self.device_selected(device_info)
     
     def toggle_config(self, is_on=False, pane=None):
-        try:
-            # 直接调用Settings类的方法来更新设置
-            self.settings.update_setting(pane.get_stream_type()  , enabled=is_on, resolution=pane.get_combo_value())
-            self.restart_real_sense(self.settings)  # 假设你的Settings类有一个方法来获取所有设置
-            print("Settings updated successfully.")
-        except Exception as e:
-            print(f"An error occurred: {e}")
+        # 直接调用Settings类的方法来更新设置
+        self.settings.update_setting(pane.get_stream_type()  , enabled=is_on, resolution=pane.get_combo_value())
+        self.restart_real_sense(self.settings)  # 假设你的Settings类有一个方法来获取所有设置
+        print("Settings updated successfully.")
 
     def photo_capture(self):
         # 直接检查是否有流启用，如果没有，则打印信息并返回
@@ -77,9 +73,8 @@ class MainApp:
         print("Device selected successfully.")
 
     def restart_real_sense(self, settings):
-        with self.settings_lock:
-            self.rs_device.toggle_config(settings)
-            self.rs_device.restart_pipeline()
+        self.rs_device.toggle_config(settings)
+        self.rs_device.restart_pipeline()
 
     def stop_real_sense(self):
         if self.rs_device.is_pipeline_started:
