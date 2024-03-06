@@ -4,7 +4,7 @@ from PIL import Image, ImageTk
 class ImageProcessor:
     @staticmethod
     def _resize_image(image, target_width, target_height):
-        """根据传入的目标宽度和高度调整图像尺寸，保持图像原始比例。"""
+        """根據傳入的目標寬度和高度調整圖像尺寸，保持圖像原始比例。"""
         target_ratio = target_width / target_height
         original_ratio = image.width / image.height
 
@@ -21,15 +21,15 @@ class ImageProcessor:
 
     @staticmethod
     def _process_image(image_data, color_mode, target_width, target_height):
-        """通用图像处理方法，包括颜色转换和尺寸调整，根据传入的宽度和高度调整图像大小。"""
+        """通用圖像處理方法，包括顏色轉換和尺寸調整，根據傳入的寬度和高度調整圖像大小。"""
         if image_data is None:
             return None
 
-        if color_mode == cv2.COLOR_BGR2RGB:  # 彩色图像
+        if color_mode == cv2.COLOR_BGR2RGB:  # 彩色圖像
             image_colormap = cv2.cvtColor(image_data, color_mode)
-        elif color_mode == "depth":  # 深度图像
+        elif color_mode == "depth":  # 深度圖像
             image_colormap = cv2.applyColorMap(cv2.convertScaleAbs(image_data, alpha=0.03), cv2.COLORMAP_JET)
-        else:  # 红外图像
+        else:  # 紅外圖像
             image_colormap = cv2.cvtColor(image_data, cv2.COLOR_GRAY2RGB)
 
         pil_image = Image.fromarray(image_colormap)
@@ -39,7 +39,7 @@ class ImageProcessor:
     
     @staticmethod
     def process_image_by_type(image_data, stream_type, target_width, target_height):
-        """根据流类型选择正确的图像处理方法"""
+        """根據流類型選擇正確的圖像處理方法"""
         if stream_type == "depth":
             return ImageProcessor.process_and_resize_depth_image(image_data, target_width, target_height)
         elif stream_type == "infrared":
@@ -51,11 +51,11 @@ class ImageProcessor:
         
     @staticmethod
     def calculate_target_size(window_height, right_panel_width):
-        # 根据4:3的比例计算目标高度和宽度，确保图像不会被拉伸或压缩
+        # 根據4:3的比例計算目標高度和寬度，確保圖像不會被拉伸或壓縮
         target_height_per_image = window_height // 3
         target_width = right_panel_width
 
-        # 保持图像的4:3长宽比，同时确保图像能够在分配的空间中最大化显示
+        # 保持圖像的4:3長寬比，同時確保圖像能夠在分配的空間中最大化顯示
         target_height = min(target_height_per_image, target_width * 3 // 4)
         target_width = target_height * 4 // 3
 

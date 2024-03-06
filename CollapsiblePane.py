@@ -25,7 +25,7 @@ class CollapsiblePane(tk.Frame):
         # 建立子框架用於放置折疊的內容
         self.sub_frame = tk.Frame(self, relief="sunken", borderwidth=1)
         self._is_collapsed = False  # 面板的初始狀態為摺疊
-        self.__toggle()  # 調用__toggle函數來應用初始狀態
+        self.__toggle()  # 調用 __toggle 函數來應用初始狀態
 
     def __toggle(self, event=None):
         # 根據當前狀態切換面板的展開或摺疊
@@ -38,21 +38,20 @@ class CollapsiblePane(tk.Frame):
         self._is_collapsed = not self._is_collapsed
 
     def get_combo_value(self):
-        """获取下拉菜单(combo)的当前选中值。"""
+        """獲取下拉菜單(combo)的當前選中值。"""
         try:
             return self.sub_frame.combo.get()
         except AttributeError:
-            # 当combo不存在时返回一个默认值或抛出异常
+            # 當 combo 不存在時返回一個默認值或拋出異常
             print("Combo box is not initialized.")
-            return None  # 或者抛出异常
-
+            return None  # 或者拋出異常
 
     def get_stream_type(self):
-        """获取并处理标题标签中的流类型。"""
+        """獲取並處理標題標籤中的流類型。"""
         try:
             stream_type_raw = self.title_label["text"]
             return stream_type_raw.strip().lower().replace(" stream", "")
         except AttributeError:
-            # 当title_label不存在时返回一个默认值或抛出异常
+            # 當 title_label 不存在時返回一個默認值或拋出異常
             print("Title label is not initialized.")
-            return ""  # 或者抛出异常
+            return ""  # 或者拋出異常
