@@ -126,19 +126,23 @@ class App(tk.Tk):
         # 添加可摺疊面板並設置其內容
         self.depth_stream = CollapsiblePane(self.left_panel, title="Depth Stream ", toggle_callback=toggle_callback)
         self.depth_stream.pack(fill="x", expand=0, padx=4, pady=4)  # 摺疊時不佔用額外空間
-        self._add_stream_setting(self.depth_stream.sub_frame, ["320 x 240"])
+        self._add_stream_setting(self.depth_stream.sub_frame, ["640 x 480"])
 
         self.infrared_stream = CollapsiblePane(self.left_panel, title="Infrared Stream ", toggle_callback=toggle_callback)
         self.infrared_stream.pack(fill="x", expand=0, padx=4, pady=4)
-        self._add_stream_setting(self.infrared_stream.sub_frame, ["320 x 240"])
+        self._add_stream_setting(self.infrared_stream.sub_frame, ["640 x 480"])
 
         self.color_stream = CollapsiblePane(self.left_panel, title="Color Stream ", toggle_callback=toggle_callback)
         self.color_stream.pack(fill="x", expand=0, padx=4, pady=4)
-        self._add_stream_setting(self.color_stream.sub_frame, ["640 x 360", "640 x 480"])
+        self._add_stream_setting(self.color_stream.sub_frame, ["640 x 480"])
 
-        # 在左側面板底部添加一個名為"拍照"的按鈕
-        self.capture_button = tk.Button(self.left_panel, text="Capture", width=20, height=3, command=self.capture_photo)
-        self.capture_button.pack(side="bottom", fill="x", padx=8, pady=8)
+        self.is_recording = False
+
+        self.record_button_text = tk.StringVar()
+        self.record_button_text.set("Start Recording")
+        self.record_button = tk.Button(self.left_panel, textvariable=self.record_button_text,
+                                       bg="green", width=20, height=3, command=self._toggle_recording)
+        self.record_button.pack(side="bottom", fill="x", padx=8, pady=8)
 
     def _setup_right_panel(self):
         # 確保 right_panel 能夠根據內容自動調整大小
@@ -157,14 +161,31 @@ class App(tk.Tk):
         # 佈局框架和標籤
         self._adjust_right_panel_layout()
     
-    def capture_photo(self):
+    def _toggle_recording(self):
+        if self.is_recording:
+            self.is_recording = False
+            self.record_button_text.set("Start Recording")
+            self.record_button.config(bg="green")
+            print("Stopped recording")
+        else:
+            self.is_recording = True
+            self.record_button_text.set("Stop Recording")
+            self.record_button.config(bg="red")
+            print("Started recording")    
         click_callback = self.toggle_callback
         if click_callback is not None:
-            click_callback('CapturePhoto')
+            click_callback(mode = 'CapturePhoto', is_recording = self.is_recording)
         else:
             print("Photo function is not yet available")
-        
     
+    def stop_recording(self):
+        """手动停止录制，并更新按钮状态"""
+        if self.is_recording:
+            self.is_recording = False
+            self.record_button_text.set("Start Recording")
+            self.record_button.config(bg="green")
+            print("Recording stopped due to no active stream.")
+
     def _adjust_right_panel_layout(self):
         
         # 佈局標籤
@@ -181,14 +202,14 @@ class App(tk.Tk):
         self.depth_stream.pack_forget()
         self.infrared_stream.pack_forget()
         self.color_stream.pack_forget()
-        self.capture_button.pack_forget()
+        self.record_button.pack_forget()
 
     def _show_stream_options(self):
         """顯示流選項和捕獲按鈕"""
         self.depth_stream.pack(fill="x", expand=0, padx=4, pady=4)
         self.infrared_stream.pack(fill="x", expand=0, padx=4, pady=4)
         self.color_stream.pack(fill="x", expand=0, padx=4, pady=4)
-        self.capture_button.pack(side="bottom", fill="x", padx=8, pady=8)
+        self.record_button.pack(side="bottom", fill="x", padx=8, pady=8)
 
     def reset_toggle_switches(self):
         """重置所有流的開關狀態為 'off'。"""

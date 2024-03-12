@@ -6,6 +6,7 @@ from RealSense import RealSense
 from ImageProcessor import ImageProcessor
 from ImageSaver import ImageSaver
 from Settings import Settings
+from datetime import datetime
 
 class MainApp:
     def __init__(self):
@@ -15,6 +16,8 @@ class MainApp:
         self.black_image = ImageTk.PhotoImage(Image.new("RGB", (160, 120), "black")) # 創建一個黑色的預設圖像
         self.update_display_active = True # 控制更新顯示的狀態
         self.rs_device = None # 初始化 RealSense 設備為 None
+        self.recording_lock = threading.Lock()
+        self.is_recording_enabled = False
 
     def __enter__(self):
         self.rs_device = RealSense().__enter__()  # 創建並初始化RealSense實例
@@ -23,21 +26,23 @@ class MainApp:
         self.app.update_device_options(device_list)  # 更新GUI中的設備選擇下拉菜單
         # 啟動後台線程以持續更新設置並刷新GUI
         self.update_thread = threading.Thread(target=self._update_display_loop, daemon=True)
+        self.record_thread = threading.Thread(target=self.record_images, daemon=True)
         self.update_thread.start() # 啟動線程
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         # 清理RealSense資源
         self.update_display_active = False # 停止顯示更新
+        self.is_recording_enabled = False # 停止錄製
         if self.rs_device:
             self.rs_device.__exit__(exc_type, exc_val, exc_tb) # 正常退出RealSense資源
 
-    def callback_function(self, mode, is_on=False, pane=None, device_info=None):
+    def callback_function(self, mode, is_on=False, pane=None, device_info=None, is_recording=None):
         # 根據回調模式進行相對應操作
         if mode == "ToggleConfig":
             self.toggle_config(is_on, pane)
         elif mode == "CapturePhoto":
-            self.photo_capture()
+            self.photo_capture(is_recording)
         elif mode == "DeviceSelected":
             self.device_selected(device_info)
     
@@ -46,21 +51,38 @@ class MainApp:
         self.settings.update_setting(pane.get_stream_type(), enabled=is_on, resolution=pane.get_combo_value())
         self.restart_real_sense(self.settings) # 重新啟動 RealSense 設備以應用新設置
 
-    def photo_capture(self):
+    def photo_capture(self, is_recording):
         # 檢查是否有啟用的流，若無則跳過拍照
         if not any(self.settings.is_stream_enabled(stream) for stream in ['depth', 'infrared', 'color']):
-            print("No stream is enabled. Skipping photo capture.")
+            print("No stream is enabled. Stopping recording.")
+            self.app.stop_recording()  # 调用App类的stop_recording方法
             return
+        else:
+            with self.recording_lock:
+                self.is_recording_enabled = is_recording
+            if self.is_recording_enabled:
+                #開啟record_images 使用線程
+                self.record_thread = threading.Thread(target=self.record_images, daemon=True)
+                self.record_thread.start()
+            else:
+                #等待線程結束
+                self.record_thread.join()
 
-        # 根據設置捕獲圖像並保存
-        ImageSaver.photo_capture(
-            self.settings.get_all_settings(),
-            depth_image=self.rs_device.get_depth_image() if self.settings.is_stream_enabled('depth') else None,
-            infrared_image=self.rs_device.get_infrared_image() if self.settings.is_stream_enabled('infrared') else None,
-            color_image=self.rs_device.get_color_image() if self.settings.is_stream_enabled('color') else None,
-            depth_intrinsics=self.rs_device.get_depth_intrinsics() if self.settings.is_stream_enabled('depth') else None
-        )
-    
+    def record_images(self):
+        while self.is_recording_enabled:
+            with self.recording_lock:
+                should_recorde = self.is_recording_enabled
+            if should_recorde:
+                ImageSaver.photo_capture(
+                    self.settings.get_all_settings(),
+                    depth_image=self.rs_device.get_depth_image() if self.settings.is_stream_enabled('depth') else None,
+                    infrared_image=self.rs_device.get_infrared_image() if self.settings.is_stream_enabled('infrared') else None,
+                    color_image=self.rs_device.get_color_image() if self.settings.is_stream_enabled('color') else None,
+                    depth_intrinsics=self.rs_device.get_depth_intrinsics() if self.settings.is_stream_enabled('depth') else None,
+                    time = str(datetime.now().timestamp()).replace('.', '_')
+                )
+        #threading.Event().wait(0.05)    
+
     def device_selected(self, device_info):
         # 處理設備選擇事件
         print(f"Device selected: {device_info}")

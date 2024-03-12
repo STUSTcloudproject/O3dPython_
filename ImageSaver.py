@@ -8,6 +8,7 @@ import numpy as np
 import pyrealsense2 as rs
 
 class ImageSaver:
+
     @staticmethod
     def save_image(image, path, image_type='photo'):
         """將圖像保存為文件"""
@@ -52,35 +53,34 @@ class ImageSaver:
         print(f"{cloud_type.capitalize()} point cloud saved successfully at {path}")
 
     @staticmethod
-    def photo_capture(settings, depth_image=None, infrared_image=None, color_image=None, depth_intrinsics=None):
-        """根據設置捕獲圖像並保存"""
-        # 確定 history 文件夾的路徑
+    def photo_capture(settings, depth_image=None, infrared_image=None, color_image=None, depth_intrinsics=None, time=None):
+        # 确定 history 文件夹的路径
         history_path = os.path.join(os.getcwd(), "history")
-        # 如果 history 目錄不存在，則創建
+        # 如果 history 目录不存在，则创建
         os.makedirs(history_path, exist_ok=True)
 
-        # 創建以當前時間命名的文件夾
-        now = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-        session_path = os.path.join(history_path, now)
-        # 使用 exist_ok=True 參數來避免 FileExistsError
-        os.makedirs(session_path, exist_ok=True)
-
-        # 根據設置保存深度圖像
+        # 创建特定类型的子目录，包括存储点云文件的 'depth_ply' 目录
+        streams = ['depth', 'infrared', 'color', 'depth_ply']
+        for stream in streams:
+            os.makedirs(os.path.join(history_path, stream), exist_ok=True)
+        
+        # 根据设置保存深度图像，并在相应的条件下保存点云文件
         if settings.get('depth', {}).get('enabled') and depth_image is not None:
-            depth_image_path = os.path.join(session_path, "depth.png")
+            depth_image_path = os.path.join(history_path, "depth", f"{time}.png")
             ImageSaver.save_image(depth_image, depth_image_path, "Depth")
-            # 保存點雲文件
-            if depth_image is not None and depth_intrinsics is not None:
-                ply_path = os.path.join(session_path, "depth.ply")
+            
+            # 如果提供了深度内参，保存点云文件到 'depth_ply' 目录
+            if depth_intrinsics is not None:
+                ply_path = os.path.join(history_path, "depth_ply", f"{time}.ply")
                 ImageSaver.save_point_cloud(depth_image, depth_intrinsics, ply_path, "Depth")
 
-        # 根據設置保存紅外線圖像
+        # 根据设置保存红外线图像
         if settings.get('infrared', {}).get('enabled') and infrared_image is not None:
-            infrared_image_path = os.path.join(session_path, "infrared.png")
+            infrared_image_path = os.path.join(history_path, "infrared", f"{time}.png")
             ImageSaver.save_image(infrared_image, infrared_image_path, "Infrared")
 
-        # 根據設置保存彩色圖像
+        # 根据设置保存彩色图像
         if settings.get('color', {}).get('enabled') and color_image is not None:
-            color_image = cv2.cvtColor(color_image, cv2.COLOR_BGR2RGB)
-            color_image_path = os.path.join(session_path, "color.png")
+            color_image_path = os.path.join(history_path, "color", f"{time}.png")
+            color_image = cv2.cvtColor(color_image, cv2.COLOR_BGR2RGB) if isinstance(color_image, np.ndarray) else color_image
             ImageSaver.save_image(color_image, color_image_path, "Color")
