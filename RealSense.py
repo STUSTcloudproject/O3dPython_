@@ -113,10 +113,14 @@ class RealSense:
             self.thread.start()
 
     def _run_thread(self):
+        align_to = rs.stream.color
+        align = rs.align(align_to)  # 创建对齐对象
+
         while not self.stop_event.is_set():
             if self.is_pipeline_started and not self.stop_event.is_set():
                 try:
                     frames = self.pipeline.wait_for_frames()
+                    aligned_frames = align.process(frames)  # 对齐帧
                 except RuntimeError as e:
                     print(f"RealSense error: {e}")
                     continue
@@ -124,25 +128,26 @@ class RealSense:
                     print(f"Unexpected error: {e}")
                     continue
 
-                with self.lock:  # 使用鎖來確保線程安全
+                with self.lock:  # 使用锁来确保线程安全
                     if self.is_depth_enabled:
-                        self.depth_frame = frames.get_depth_frame()
+                        self.depth_frame = aligned_frames.get_depth_frame()
                         if self.depth_frame:
                             self.depth_image = np.asanyarray(self.depth_frame.get_data())
 
                     if self.is_color_enabled:
-                        color_frame = frames.get_color_frame()
+                        color_frame = aligned_frames.get_color_frame()
                         if color_frame:
                             self.color_image = np.asanyarray(color_frame.get_data())
 
+                    # 对于红外帧，对齐操作不适用，因为红外帧没有直接与彩色帧对齐的必要
                     if self.is_infrared_enabled:
                         infrared_frame = frames.first(rs.stream.infrared)
                         if infrared_frame:
                             self.infrared_image = np.asanyarray(infrared_frame.get_data())
             else:
-                # 如果pipeline沒有啟動，稍微延遲循環，減少CPU佔用
+                # 如果pipeline没有启动，稍微延迟循环，减少CPU占用
                 time.sleep(0.1)
-            # 控制循環頻率
+
 
     def get_depth_intrinsics(self):
         with self.lock:
